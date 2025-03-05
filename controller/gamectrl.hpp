@@ -1,14 +1,14 @@
 #pragma once
 
 #ifdef __CLI
-    #include "cli_presenter.h"
+    #include "libbgamecli.h"
 #else
+    #include "libbgamedsk.h"
+#endif
 
 namespace s21 {
-
     void initController();
     void freeController();
-
 }
 
 #endif

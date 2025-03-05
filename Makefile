@@ -20,11 +20,11 @@ VALID_GUI_TYPES = desktop cli
 GUI_TYPE ?= cli
 
 ifeq (${GUI_TYPE},desktop) 
-PRESENTER_LIB_PATH := ./gui/desktop
+    PRESENTER_LIB_PATH := ./gui/desktop
 else ifeq ($(GUI_TYPE),cli)
-PRESENTER_LIB_PATH := ./gui/cli
+    PRESENTER_LIB_PATH := ./gui/cli
 else
-${error Unknown interface type: $(GUI_TYPE). Valid types: $(VALID_GUI_TYPES)}
+    ${error Unknown interface type: $(GUI_TYPE). Valid types: $(VALID_GUI_TYPES)}
 endif
 
 UNAME_S := $(shell uname -s)
@@ -62,7 +62,7 @@ DEPENDENCIES :=
 TEST_DEPENDENCIES := clang-format cppcheck check lcov libgtest-dev libgmock-dev
 
 .DEFAULT_GOAL: all
-.PHOMY: all build install uninstall check-dependencies check-test-dependencies check-folders tests clean
+.PHOMY: all build install uninstall check-dependencies check-test-dependencies check-folders tests linter clean
 
 all: build
 
@@ -74,7 +74,13 @@ install: check-folders
 uninstall:
 	@${MAKE} --directory=${PRESENTER_LIB_PATH} uninstall BIN_PATH=${LIB_BIN_PATH} INCLUDE_PATH=${LIB_INLUDES_PATH} LIB_TYPE=${LIB_TYPE}
 
-tests: check-test-dependencies
+tests: check-test-dependencies linter
+
+linter:
+	@printf "\e[40;33m\n";
+	@echo Linter tests started
+	@tput sgr0
+	@${MAKE} --directory=${PRESENTER_LIB_PATH} linter
 
 check-dependencies:
 	@printf "\e[40;32m\n";
@@ -101,8 +107,9 @@ check-dependencies:
 	@tput sgr0
 
 check-test-dependencies:
-	@printf "\e[40;32m\n";
+	@printf "\e[40;33m\n";
 	@echo "Checking dependancies for testing ${PROJECT} project."
+	@printf "\e[40;32m\n";
 	@for dep in $(TEST_DEPENDENCIES); do \
 		if [ "$(PACKAGE_MANAGER)" != "unknown" ]; then \
 			echo "Checking $$dep installation."; \
@@ -144,4 +151,6 @@ check-folders:
 clean:
 	@${MAKE} uninstall INSTALL_PATH=${INSTALL_PATH}
 	@rm -rf ${INSTALL_PATH}
+	@printf "\e[40;33m\n";
 	@echo "--- Project ${PROJECT} uninstalled. ---"
+	@tput sgr0

@@ -114,13 +114,13 @@ bool removeMatrix(int rows, int cols, int** matrix) {
 GameInfo_t updateCurrentState() {
     GameInfo_t gameinfo = {0};
 
-    gameinfo.field = updateMatrix();
-    gameinfo.high_score = 0;
-    gameinfo.score = updateScore();
-    gameinfo.level = getCurrentLevel();
-    gameinfo.next = getNextFigure();
-    gameinfo.pause = getPauseState();
-    gameinfo.speed = getGameSpeed();
+    // gameinfo.field = updateMatrix();
+    // gameinfo.high_score = 0;
+    // gameinfo.score = updateScore();
+    // gameinfo.level = getCurrentLevel();
+    // gameinfo.next = getNextFigure();
+    // gameinfo.pause = getPauseState();
+    // gameinfo.speed = getGameSpeed();
 
     return gameinfo;
 }
