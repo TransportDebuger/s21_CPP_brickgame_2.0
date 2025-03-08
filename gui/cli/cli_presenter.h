@@ -96,7 +96,7 @@ ConsoleView_t* locateView(ConsoleView_t* view);
 */
 int appendViewElement(ConsoleView_t* view, int top, int left, int height,
                       int width, char* label);
-void deleteElement(ConsoleView_t* view, int index);
+void deleteViewElement(ConsoleView_t* view, int index);
 
 /*!
     \details Graphic_functions Функции визуализации интерфейса.

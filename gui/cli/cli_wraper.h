@@ -9,12 +9,13 @@ class ConsoleViewWrapper : public s21::ViewInterface {
   ConsoleViewWrapper();
   ~ConsoleViewWrapper() override;
 
-  void addElement(int top, int left, int width, int height) override;
+  void addElement(int top, int left, int width, int height, char* label) override;
+  void deleteElement(int index) override;
   void updateElement(int index, int top, int left) override;
   void render() override;
 
  private:
-  ConsoleView_t consoleView;  // Консольное представление на C
+  ConsoleView_t* consoleView;  // Консольное представление на C
 };
 
 }  // namespace s21

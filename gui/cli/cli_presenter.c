@@ -104,7 +104,7 @@ int appendViewElement(ConsoleView_t* view, int top, int left, int height,
   return errval;
 }
 
-void deleteElement(ConsoleView_t* view, int index) {
+void deleteViewElement(ConsoleView_t* view, int index) {
   if (!view) return;
   if (index < 0 || index > view->size - 1) return;
 

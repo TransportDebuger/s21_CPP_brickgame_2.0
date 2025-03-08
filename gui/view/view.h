@@ -32,7 +32,8 @@ namespace s21 {
 class ViewInterface {
  public:
   virtual ~ViewInterface() = default;
-  virtual void addElement(int top, int left, int width, int height) = 0;
+  virtual void addElement(int top, int left, int width, int height, char* label) = 0;
+  virtual void deleteElement(int index) = 0;
   virtual void updateElement(int index, int top, int left) = 0;
   virtual void render() = 0;
 };
