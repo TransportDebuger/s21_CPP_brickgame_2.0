@@ -28,13 +28,13 @@ int initView(ConsoleView_t* view) {
 void freeView(ConsoleView_t* view) {
   if (view) {
     for (int i = view->size - 1; i >= 0; i--) {
-      deleteElement(view, i);
+      deleteViewElement(view, i);
     }
     free(view);
     locateView(view);
     view = NULL;
-    freeNCurses();
   }
+  freeNCurses();
 }
 
 /*!
@@ -62,7 +62,7 @@ ConsoleView_t* locateView(ConsoleView_t* view) {
   if (view == locator.view && locator.setval) {
     locator.view = NULL;
     locator.setval = FALSE;
-  } else if (gameinfo != locator.view && !locator.setval) {
+  } else if (view != locator.view && !locator.setval) {
     locator.view = view;
     locator.setval = TRUE;
   }
@@ -70,15 +70,15 @@ ConsoleView_t* locateView(ConsoleView_t* view) {
   return locator.view;
 }
 
-int appendViewElement(ConsoleView_t* view, int top, int left, int height,
+int appendViewElement(ConsoleView_t* view, DataType type, int top, int left, int height,
                       int width, char* label) {
   int errval = ERROR_FAULT;
-  ConsoleElement_t* element;
-  int newsize = 1;
 
-  //Проверка условий исполнения.
+  //Проверка условий исполнения функции.
   if (!view) return errval;
 
+  ConsoleElement_t* element;
+  size_t newsize = 1;
   newsize += view->size;
 
   if ((element = (ConsoleElement_t*)malloc(sizeof(ConsoleElement_t) *
@@ -91,13 +91,18 @@ int appendViewElement(ConsoleView_t* view, int top, int left, int height,
         element[i].left = left;
         element[i].height = height;
         element[i].width = width;
-        element[i].label = (char)malloc(sizeof(char) * (strlen(label) + 1));
+        element[i].label = (char*)malloc(sizeof(char) * (int)(strlen(label) + 1));
         for (int j = 0; j <= strlen(label); j++) {
           element[i].label[j] = label[j];
         }
       }
     }
-
+    for (int i = 0; i < view->size; i++) {
+      free(view->element[i].label);
+    }
+    if (view->element)
+      free(view->element);
+    view->element = element;
     errval = ERROR_OK;
   }
 
@@ -106,35 +111,32 @@ int appendViewElement(ConsoleView_t* view, int top, int left, int height,
 
 void deleteViewElement(ConsoleView_t* view, int index) {
   if (!view) return;
+  if (!view->element) return;
   if (index < 0 || index > view->size - 1) return;
 
-  if (view->element[index]->label) free(label);
-  free(view->element[index]);
+  if (view->element[index].label) free(view->element[index].label);
 
   for (int i = index; i < view->size - 1; i++) {
-    view.element[i] = view.element[i + 1];
+    view->element[i] = view->element[i + 1];
   }
-  view->element =
-      realloc(view->element, sizeof(ConsoleElement_t) * (view->size - 1));
+
   --view->size;
-}
-
-void renderView(ConsoleView_t* view) {
-  if (view) {
-    for (int i = 0; i < view->size; i++) {
-      renderElementFrame(view->element[i]);
-    }
+  if (view->size > 0) {
+  view->element =
+      (ConsoleElement_t*)realloc(view->element, sizeof(ConsoleElement_t) * (view->size - 1));
+  } else {
+    free(view->element);
   }
 }
 
-void renderElementFrame(ConsoleElement_t* element) {
-  if (element) {
-    if (element->height < MIN_ELEMENT_DIM && element->width < MIN_ELEMENT_DIM)
+void renderElementFrame(const ConsoleElement_t element) {
+    if (element.height < MIN_ELEMENT_DIM || element.width < MIN_ELEMENT_DIM)
       return;
-    int top = element->top;
-    int left = element->left;
-    int height = element->height + 2;
-    int width = element->width + 2;
+
+    int top = element.top;
+    int left = element.left;
+    int height = element.height + 2;
+    int width = element.width + 2;
 
     if (top < 0)
       top = 0;
@@ -147,8 +149,8 @@ void renderElementFrame(ConsoleElement_t* element) {
 
     int labelLength = 0;
 
-    if (element->label != NULL) {
-      labelLength = (int)strlen(element->label);
+    if (element.label != NULL) {
+      labelLength = (int)strlen(element.label);
     }
 
     if (labelLength > (width * 2) - 2) {
@@ -159,7 +161,7 @@ void renderElementFrame(ConsoleElement_t* element) {
 
     for (int i = left; i < left + width * 2; i++) {
       if (labelLength > 0 && i >= labelpos && i < labelpos + labelLength) {
-        mvaddch(top, i, label[i - labelpos]);
+        mvaddch(top, i, element.label[i - labelpos]);
       } else {
         mvaddch(top, i, ACS_HLINE);
       }
@@ -176,5 +178,36 @@ void renderElementFrame(ConsoleElement_t* element) {
     mvaddch(top + height - 1, left, ACS_LLCORNER);
     mvaddch(top + height - 1, left + (width * 2) - 1, ACS_LRCORNER);
     refresh();
+}
+
+void renderView(const ConsoleView_t* view) {
+  if (view) {
+    for (int i = 0; i < view->size; i++) {
+      renderElementFrame(view->element[i]);
+      refresh();
+    }
   }
+}
+
+void refreshViewElement(ConsoleView_t* view, int index, int type, void* data) {
+  if (!view || !data) return;
+  if (index < 0 || index >= view->size) return;
+  if (view->elememnt[index].type != type) return;
+  
+  int top = view->element[index].top + ELEMENT_DATA_OFFSET;
+  int left = view->element[index].left + ELEMENT_DATA_OFFSET;
+
+  switch (type)
+    case DATA_TYPE_INT: {
+      int value = *(int *)data;
+      mvprint(top, left, "%i", value);
+      break;
+    }
+    case DATA_TYPE_MATRIX: {
+      int** matrix = (int **)data;
+      for (int i = 0; i < )
+      break;
+    }
+    default:
+      break;
 }
