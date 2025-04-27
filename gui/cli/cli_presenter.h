@@ -30,10 +30,32 @@
 #define HINTS_LABEL "HINTS"
 #define GAME_STATUS_LABEL "GAME STATUS"
 
-#define MIN_COORDINATE_VALUE 1
+/*!
+  \brief Минимальное значение координаты расположения элемента
+  \details Макрос определяет минимальное значение координаты создаваемого
+  элемента. При использовании в функциях создания элементов в случае передачи
+  значения менее указанного данным макросом, значение координаты устанавливается
+  равным значению макроса.
+*/
+#define MIN_COORDINATE_VALUE 0
+
+/*!
+  \brief Ммаксимальное значение координаты расположения элемента
+  \details Макрос определяет максимальное значение координаты создаваемого
+  элемента. При использовании в функциях создания элементов в случае передачи
+  значения более указанного данным макросом, значение координаты устанавливается
+  равным значению макроса за вычетом ширины элемента.
+*/
 #define MAX_COORDINATE_VALUE 42
-#define MIN_ELEMENT_DIM 2
+
+/*!
+  \brief Минимальный размер измерения для вывода на экран
+  \details Макрос определяет минимальный размер измерения (высота, ширина) при
+  котором созданный элемент интерфейса выводится на экран.
+*/
+#define MIN_ELEMENT_DIM 1
 #define ELEMENT_DATA_OFFSET 1
+#define PIXEL_WIDTH 2
 
 #ifdef __cplusplus
 extern "C" {
@@ -41,11 +63,15 @@ extern "C" {
 
 /*!
   \brief Перечисление типов данных элемента
-  \details Перечисление используется в определении типа данных (целое числоБ двумерный массив) в структуре ConsoleElement_t, а также в функции обновления изображения.
+  \details Перечисление используется в определении типа данных в структуре
+  ConsoleElement_t, а также в функции обновления изображения.
 */
 typedef enum DataType {
-  DATA_TYPE_INT,     ///< Целое число 
-  DATA_TYPE_MATRIX   ///< Двумерный массив (матрица)
+  DATA_TYPE_INT,    ///< Целое число
+  DATA_TYPE_INT1D,  ///< Одномерный массив целых чисел
+  DATA_TYPE_INT2D,  ///< Двумерный массив (матрица)
+  DATA_TYPE_CHAR,   ///< Символ
+  DATA_TYPE_STR     ///< Строка
 } DataType;
 
 /*!
@@ -55,7 +81,6 @@ typedef enum DataType {
 */
 typedef struct ConsoleElement_t {
   int type;  ///< Хранимый тип данных (enum DataType)
-  void* data; ///< Данные, выводимые элементом интерфейса
   int top;  ///< Координата расположения по вертикали экрана левого верхнего
             ///< угла элемента.
   int left;  ///< Координата расположения по горизонтали экрана левого верхнего
@@ -68,8 +93,8 @@ typedef struct ConsoleElement_t {
 
 /*!
     \brief Структура хранения элементов (ConsoleElement_t) интерфейса.
-    \details Данная структура предназначена для хранения массива элементов
-   интерфейса представления.
+    \details Структура предназначена для хранения массива элементов
+   интерфейса представления, а также его размерности.
 */
 typedef struct ConsoleView_t {
   ConsoleElement_t* element;  ///< Массив элементов интерфейса.
@@ -92,7 +117,7 @@ typedef struct ViewLocator_t {
   \defgroup Data_structure_management Функции управления структурами данных
   \brief Функции предназначенные для создания и уничтожения структур данных.
 */
-int initView(ConsoleView_t* view);
+ConsoleView_t* initView();
 void freeView(ConsoleView_t* view);
 
 /*!
@@ -106,8 +131,8 @@ ConsoleView_t* locateView(ConsoleView_t* view);
     \brief Функции предназначенные для управления данными, хранимых в
    структурах.
 */
-int appendViewElement(ConsoleView_t* view, int type, int top, int left, int height,
-                      int width, char* label);
+int appendViewElement(ConsoleView_t* view, int type, int top, int left,
+                      int height, int width, char* label);
 void deleteViewElement(ConsoleView_t* view, int index);
 void refreshViewElement(ConsoleView_t* view, int index, int type, void* data);
 
@@ -117,7 +142,7 @@ void refreshViewElement(ConsoleView_t* view, int index, int type, void* data);
    на экране.
 */
 void renderView(const ConsoleView_t* view);
-//void renderElementFrame(ConsoleElement_t* element);
+// void renderElementFrame(ConsoleElement_t* element);
 //Добавить рендеринг обновленного состояния элемента
 
 #ifdef __cplusplus

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../view/view.h"
+#include "../view/view.hpp"
 #include "cli_presenter.h"
 namespace s21 {
 
@@ -12,7 +12,7 @@ class ConsoleViewWrapper : public s21::ViewInterface {
   void addElement(int type, int top, int left, int width, int height,
                   char* label) override;
   void deleteElement(int index) override;
-  // void updateElement(int index, int top, int left) override;
+  void refreshElemenet(int index, int datatype, void* data) override;
   void render() override;
 
  private:

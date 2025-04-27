@@ -10,19 +10,16 @@ void initNcurses() {
 
 void freeNCurses() { endwin(); }
 
-int initView(ConsoleView_t* view) {
-  ConsoleView_t* consoleView;
-  int errval = ERROR_FAULT;
+ConsoleView_t* initView() {
+  ConsoleView_t* consoleView = NULL;
 
   if ((consoleView = (ConsoleView_t*)malloc(sizeof(ConsoleView_t))) != NULL) {
-    view = consoleView;
-    view->size = 0;
-    errval = ERROR_OK;
-    locateView(view);
     initNcurses();
+    consoleView->size = (size_t)0;
+    consoleView->element = NULL;
   }
 
-  return errval;
+  return consoleView;
 }
 
 void freeView(ConsoleView_t* view) {
@@ -70,39 +67,35 @@ ConsoleView_t* locateView(ConsoleView_t* view) {
   return locator.view;
 }
 
-int appendViewElement(ConsoleView_t* view, DataType type, int top, int left, int height,
-                      int width, char* label) {
+int appendViewElement(ConsoleView_t* view, int type, int top, int left,
+                      int height, int width, char* label) {
   int errval = ERROR_FAULT;
 
   //Проверка условий исполнения функции.
   if (!view) return errval;
 
-  ConsoleElement_t* element;
-  size_t newsize = 1;
-  newsize += view->size;
+  size_t newsize = view->size + 1;
+  ConsoleElement_t* elements;
+  elements = (ConsoleElement_t*)realloc(view->element,
+                                        newsize * sizeof(ConsoleElement_t));
 
-  if ((element = (ConsoleElement_t*)malloc(sizeof(ConsoleElement_t) *
-                                           newsize)) != NULL) {
-    for (int i = 0; i < newsize; i++) {
-      if (i < view->size) {
-        element[i] = view->element[i];
-      } else {
-        element[i].top = top;
-        element[i].left = left;
-        element[i].height = height;
-        element[i].width = width;
-        element[i].label = (char*)malloc(sizeof(char) * (int)(strlen(label) + 1));
-        for (int j = 0; j <= strlen(label); j++) {
-          element[i].label[j] = label[j];
-        }
+  if (elements) {
+    elements[newsize - 1].top = top;
+    elements[newsize - 1].left = left;
+    elements[newsize - 1].height = height;
+    elements[newsize - 1].width = width;
+    if (label) {
+      elements[newsize - 1].label =
+          (char*)malloc(sizeof(char) * (int)(strlen(label) + 1));
+      for (int j = 0; j <= strlen(label); j++) {
+        elements[newsize - 1].label[j] = label[j];
       }
+    } else {
+      elements[newsize - 1].label = NULL;
     }
-    for (int i = 0; i < view->size; i++) {
-      free(view->element[i].label);
-    }
-    if (view->element)
-      free(view->element);
-    view->element = element;
+
+    view->element = elements;
+    view->size = newsize;
     errval = ERROR_OK;
   }
 
@@ -122,69 +115,68 @@ void deleteViewElement(ConsoleView_t* view, int index) {
 
   --view->size;
   if (view->size > 0) {
-  view->element =
-      (ConsoleElement_t*)realloc(view->element, sizeof(ConsoleElement_t) * (view->size - 1));
+    view->element = (ConsoleElement_t*)realloc(
+        view->element, sizeof(ConsoleElement_t) * (view->size));
   } else {
     free(view->element);
   }
 }
 
 void renderElementFrame(const ConsoleElement_t element) {
-    if (element.height < MIN_ELEMENT_DIM || element.width < MIN_ELEMENT_DIM)
-      return;
+  if (element.height < MIN_ELEMENT_DIM || element.width < MIN_ELEMENT_DIM)
+    return;
 
-    int top = element.top;
-    int left = element.left;
-    int height = element.height + 2;
-    int width = element.width + 2;
+  int top = element.top;
+  int left = element.left;
+  int height = element.height + 2;
+  int width = element.width + 2;
 
-    if (top < 0)
-      top = 0;
-    else if (top > MAX_COORDINATE_VALUE - height)
-      top = MAX_COORDINATE_VALUE - height;
-    if (left < 0)
-      left = 0;
-    else if (left > MAX_COORDINATE_VALUE - width)
-      left = MAX_COORDINATE_VALUE - width;
+  if (top < 0)
+    top = 0;
+  else if (top > MAX_COORDINATE_VALUE - height)
+    top = MAX_COORDINATE_VALUE - height;
+  if (left < 0)
+    left = 0;
+  else if (left > MAX_COORDINATE_VALUE - width)
+    left = MAX_COORDINATE_VALUE - width;
 
-    int labelLength = 0;
+  int labelLength = 0;
 
-    if (element.label != NULL) {
-      labelLength = (int)strlen(element.label);
+  if (element.label != NULL) {
+    labelLength = (int)strlen(element.label);
+  }
+
+  if (labelLength > (width * PIXEL_WIDTH) - 2) {
+    labelLength = width * PIXEL_WIDTH - 2;
+  }
+
+  int labelpos = left + 1 + (width * PIXEL_WIDTH - 2 - labelLength) / 2;
+
+  for (int i = left; i < left + width * PIXEL_WIDTH; i++) {
+    if (labelLength > 0 && i >= labelpos && i < labelpos + labelLength) {
+      mvaddch(top, i, element.label[i - labelpos]);
+    } else {
+      mvaddch(top, i, ACS_HLINE);
     }
+    mvaddch(top + height - 1, i, ACS_HLINE);
+  }
 
-    if (labelLength > (width * 2) - 2) {
-      labelLength = width * 2 - 2;
-    }
+  for (int j = top; j < top + height; j++) {
+    mvaddch(j, left, ACS_VLINE);
+    mvaddch(j, left + (width * PIXEL_WIDTH) - 1, ACS_VLINE);
+  }
 
-    int labelpos = left + 1 + (width * 2 - 2 - labelLength) / 2;
-
-    for (int i = left; i < left + width * 2; i++) {
-      if (labelLength > 0 && i >= labelpos && i < labelpos + labelLength) {
-        mvaddch(top, i, element.label[i - labelpos]);
-      } else {
-        mvaddch(top, i, ACS_HLINE);
-      }
-      mvaddch(top + height - 1, i, ACS_HLINE);
-    }
-
-    for (int j = top; j < top + height; j++) {
-      mvaddch(j, left, ACS_VLINE);
-      mvaddch(j, left + (width * 2) - 1, ACS_VLINE);
-    }
-
-    mvaddch(top, left, ACS_ULCORNER);
-    mvaddch(top, left + (width * 2) - 1, ACS_URCORNER);
-    mvaddch(top + height - 1, left, ACS_LLCORNER);
-    mvaddch(top + height - 1, left + (width * 2) - 1, ACS_LRCORNER);
-    refresh();
+  mvaddch(top, left, ACS_ULCORNER);
+  mvaddch(top, left + (width * PIXEL_WIDTH) - 1, ACS_URCORNER);
+  mvaddch(top + height - 1, left, ACS_LLCORNER);
+  mvaddch(top + height - 1, left + (width * 2) - 1, ACS_LRCORNER);
+  refresh();
 }
 
 void renderView(const ConsoleView_t* view) {
   if (view) {
     for (int i = 0; i < view->size; i++) {
       renderElementFrame(view->element[i]);
-      refresh();
     }
   }
 }
@@ -192,22 +184,40 @@ void renderView(const ConsoleView_t* view) {
 void refreshViewElement(ConsoleView_t* view, int index, int type, void* data) {
   if (!view || !data) return;
   if (index < 0 || index >= view->size) return;
-  if (view->elememnt[index].type != type) return;
-  
+  if (view->element[index].type != type) return;
+
   int top = view->element[index].top + ELEMENT_DATA_OFFSET;
   int left = view->element[index].left + ELEMENT_DATA_OFFSET;
 
-  switch (type)
+  switch (type) {
     case DATA_TYPE_INT: {
-      int value = *(int *)data;
-      mvprint(top, left, "%i", value);
+      int value = *(int*)data;
+      mvprintw(top, left, "%i", value);
       break;
     }
-    case DATA_TYPE_MATRIX: {
-      int** matrix = (int **)data;
-      for (int i = 0; i < )
+    case DATA_TYPE_INT2D: {
+      int** matrix = (int**)data;
+      for (int i = 0; i < view->element[index].height; i++) {
+        for (int j = 0; j < view->element[index].width; j++) {
+          if (matrix[i][j] == 0) {
+            mvprintw(top + i, left + j * PIXEL_WIDTH, "%s", "  ");
+          } else {
+            mvprintw(top + i, left + j * PIXEL_WIDTH, "%s", "[]");
+          }
+        }
+      }
+      break;
+    }
+    case DATA_TYPE_CHAR: {
+      mvprintw(top, left, "%c", *(char*)data);
+      break;
+    }
+    case DATA_TYPE_STR: {
+      mvprintw(top, left, "%s", (char*)data);
       break;
     }
     default:
       break;
+  }
+  refresh();
 }

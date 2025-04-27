@@ -1,10 +1,7 @@
-#include "./gui/cli/cli_presenter.h"
-//#include "libbgamecli.h"
+#include "./controller/gamectrl.hpp"
 #include <unistd.h>
 
 int main() {
-    initPresentation();
-    sleep(5);
-    freePresentation();
-    return 0;
+    s21::GameController controller;
+    return controller.run();
 }

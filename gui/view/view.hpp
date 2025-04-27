@@ -34,7 +34,7 @@ class ViewInterface {
   virtual ~ViewInterface() = default;
   virtual void addElement(int type, int top, int left, int width, int height, char* label) = 0;
   virtual void deleteElement(int index) = 0;
-  //virtual void updateElement(int index, int top, int left) = 0;
+  virtual void refreshElemenet(int index, int datatype, void* data) = 0;
   virtual void render() = 0;
 };
 

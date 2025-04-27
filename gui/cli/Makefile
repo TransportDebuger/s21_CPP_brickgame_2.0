@@ -3,18 +3,18 @@ CFLAGS ?= -Wall -Werror -Wextra -std=c11 -pedantic -c -fPIC
 
 PROJECT_NAME = libbgamecli
 LIB_TYPE ?= static
-VALID_LIB_TYPES = static dynamic
+VALID_LIB_TYPES = desktop cli
 LIB_SOURCES_DIR = .
 LIB_SOURCES = $(wildcard ${LIB_SOURCES_DIR}/*.c)
 LIB_HEADERS = $(wildcard ${LIB_SOURCES_DIR}/*.h)
 LIB_OBJECTS = $(patsubst %.c, %.o, ${LIB_SOURCES})
 
 ifeq ($(LIB_TYPE),static)
-    LIB_NAME = ${PROJECT_NAME}.a
+LIB_NAME = ${PROJECT_NAME}.a
 else ifeq ($(LIB_TYPE),dynamic)
-    LIB_NAME = ${PROJECT_NAME}.so
+LIB_NAME = ${PROJECT_NAME}.so
 else
-    $(error Unknown type of library: ${LIB_TYPE}. Valid library types: ${VALID_LIB_TYPES})
+$(error Unknown type of library: ${LIB_TYPE}. Valid library types: ${VALID_LIB_TYPES})
 endif
 
 BIN_PATH ?= ./lib/bin/
@@ -25,29 +25,29 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Linux)
     ifeq ($(shell which apt-get 2>/dev/null),/usr/bin/apt-get)
         PACKAGE_MANAGER := apt-get
-        CHECK_COMMAND = dpkg -l | grep -wq
+		CHECK_COMMAND = dpkg -l | grep -wq
         INSTALL_COMMAND = sudo apt-get install -y
     else ifeq ($(shell which yum 2>/dev/null),/usr/bin/yum)
         PACKAGE_MANAGER := yum
-        CHECK_COMMAND = rpm -q
+		CHECK_COMMAND = rpm -q
         INSTALL_COMMAND = sudo yum install -y
     else ifeq ($(shell which dnf 2>/dev/null),/usr/bin/dnf)
         PACKAGE_MANAGER := dnf
-        CHECK_COMMAND = rpm -q
+		CHECK_COMMAND = rpm -q
         INSTALL_COMMAND = sudo dnf install -y
     else ifeq ($(shell which pacman 2>/dev/null),/usr/bin/pacman)
         PACKAGE_MANAGER := pacman
-        CHECK_COMMAND = pacman -Q
+		CHECK_COMMAND = pacman -Q
         INSTALL_COMMAND = sudo pacman -S --noconfirm
     else
-        $(error Unknown package manager)
+$(error Unknown package manager)
     endif
 else ifeq ($(UNAME_S),Darwin)
     ifeq ($(shell which brew 2>/dev/null),/usr/local/bin/brew)
         CHECK_PACKAGE = brew list
         INSTALL_COMMAND = brew install
     else
-        $(error Homebrew not installed.)
+$(error Homebrew not installed.)
     endif
 endif
 
@@ -62,7 +62,7 @@ CLFLAGS = --style=Google --dry-run
 all: build
 
 install: check-folders
-	@printf "\e[40;33m\n";
+	@printf "\e[40;32m\n";
 	@echo "--- Installing library ${PROJECT_NAME} to the destination folder ---"
 	@cp ${LIB_NAME} "${BIN_PATH}"
 	@cp ${LIB_HEADERS} "${INCLUDE_PATH}/${PROJECT_NAME}.h"
@@ -70,22 +70,21 @@ install: check-folders
 	@tput sgr0
 
 uninstall:
-	@printf "\e[40;33m\n";
 	@rm -f "${BIN_PATH}${PROJECT_NAME}.a"
 	@rm -f "${BIN_PATH}${PROJECT_NAME}.so"
 	@rm -f "${INCLUDE_PATH}${PROJECT_NAME}.h"
 	@echo "--- Library ${PROJECT_NAME} uninstalled ---"
-	@tput sgr0
 
 build: check-dependancies ${LIB_NAME}
-	@printf "\e[40;33m\n";
-	@echo "${LIB_NAME} compilation complete"
+	@printf "\e[40;32m\n";
+	@echo "---------------------------------------"
+	@echo " ${LIB_NAME} compilation complete"
+	@echo "---------------------------------------"
 	@tput sgr0
 
 check-dependancies:
-	@printf "\e[40;33m\n";
-	@echo "Checking dependancies for ${PROJECT_NAME} project."
 	@printf "\e[40;32m\n";
+	@echo "Checking dependancies for ${PROJECT_NAME} project."
 	@for dep in $(DEPENDENCIES); do \
 		echo "Checking $$dep installation."; \
 		if ! $(CHECK_COMMAND) $$dep > /dev/null 2>&1; then \
@@ -106,9 +105,8 @@ check-dependancies:
 	@tput sgr0
 
 check-folders:
-	@printf "\e[40;33m\n";
-	@echo "Checking existance of installation folder for binary of ${PROJECT_NAME}."
 	@printf "\e[40;32m\n";
+	@echo "Checking existance of installation folder for binary of ${PROJECT_NAME}."
 	@if [ ! -d "${BIN_PATH}" ]; then \
 		echo "Folder ${BIN_PATH} does not exists. Creating folder."; \
 		mkdir -p "${BIN_PATH}"; \
@@ -144,9 +142,8 @@ tests: linter
 linter: ${CLFORMAT}
 	
 ${CLFORMAT}:	
-	@printf "\e[40;33m\n";
-	@echo '$@ test for ${PROJECT_NAME} started'
 	@printf "\e[40;32m\n";
+	@echo '--- $@ test for ${PROJECT_NAME} started ---' 
 	@for src in ${LIB_SOURCES} ${LIB_HEADERS} ; do \
 		var=`$@ ${CLFLAGS} $$src 2>&1 | wc -l`; \
 		if [ $$var -ne 0 ] ; then \
@@ -168,7 +165,8 @@ ${LIB_NAME}: ${LIB_OBJECTS}
 	@if [ "${LIB_TYPE}" = "static" ]; then \
 	    ar rc $@ ${LIB_OBJECTS}; \
 	    ranlib $@; \
+	    rm -rf ${LIB_OBJECTS}; \
 	else \
 		${CC} -shared ${LIB_OBJECTS} -o $@; \
+		rm -rf ${LIB_OBJECTS}; \
 	fi
-	@rm -f ${LIB_OBJECTS}
